@@ -1,0 +1,107 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import InfographicsCarousel from "../components/InfographicsCarousel";
+
+export default function PaperClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [paperData, setPaperData] = useState(null);
+  const [activeTab, setActiveTab] = useState("summary");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Extract paper title from query string (/paper?title=paper_name)
+  const paperTitle = searchParams.get("title") || "";
+
+  useEffect(() => {
+    if (!paperTitle) return;
+    setIsLoading(true);
+    // Fetch paper data from API
+    fetch(`/api/data?title=${encodeURIComponent(paperTitle)}&demographic=researcher`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPaperData(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        setPaperData(null);
+        setIsLoading(false);
+      });
+  }, [paperTitle]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading paper...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!paperData || paperData.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Paper not found</h2>
+          <p className="text-slate-500 mb-4">Try another paper or go back to the dashboard.</p>
+          <button
+            onClick={() => router.push("/")}
+            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors duration-300"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-2 text-slate-800">{paperData.csvTitle}</h1>
+        <div className="mb-4">
+          <a
+            href={paperData.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-teal-600 hover:underline text-sm"
+          >
+            View Original Paper
+          </a>
+        </div>
+        <div className="mb-8 flex gap-4">
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 ${activeTab === "summary" ? "bg-teal-500 text-white" : "bg-white text-teal-700 border border-teal-300"}`}
+            onClick={() => setActiveTab("summary")}
+          >
+            AI Summary
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 ${activeTab === "images" ? "bg-teal-500 text-white" : "bg-white text-teal-700 border border-teal-300"}`}
+            onClick={() => setActiveTab("images")}
+          >
+            Infographics
+          </button>
+        </div>
+        {activeTab === "summary" && (
+          <div className="bg-white/80 rounded-xl p-6 shadow mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-slate-700">AI Summary</h2>
+            <pre className="whitespace-pre-wrap text-slate-800 text-base">{paperData.summary}</pre>
+          </div>
+        )}
+        {activeTab === "images" && (
+          <div className="bg-white/80 rounded-xl p-6 shadow mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-slate-700">Infographics</h2>
+            {paperData.imageLinks && paperData.imageLinks.length > 0 ? (
+              <InfographicsCarousel images={paperData.imageLinks} />
+            ) : (
+              <p className="text-slate-500">No infographics found for this paper.</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
