@@ -78,7 +78,7 @@ Simplification – Use clear language, examples, or analogies to make it easy to
 
 
 
-"Read the following space biology paper and summarize it for a researcher in the field. Focus on:
+"Read the following space biology paper and summarize it for a researcher and or student in the field. Focus on:
 
 
 

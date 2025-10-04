@@ -343,7 +343,12 @@ export default function Dashboard() {
               )}
 
               {/* Action Button */}
-              <button className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 active:scale-95">
+              <button
+                className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-medium rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 active:scale-95"
+                onClick={() => {
+                  router.push(`/paper?title=${encodeURIComponent(item.Title)}`);
+                }}
+              >
                 View Details
               </button>
             </div>

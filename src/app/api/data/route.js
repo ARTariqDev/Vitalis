@@ -2,6 +2,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import * as cheerio from 'cheerio';
+import OpenAI from "openai";
+
 
 // In-memory cache for scraped papers (persists during warm starts)
 const cache = new Map();
@@ -158,49 +160,22 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const indexParam = searchParams.get('index');
   const titleParam = searchParams.get('title');
+    const demographic = searchParams.get('demographic') || "researcher";
 
-  // Read and parse CSV
+  // Read and parse data.json from public folder
   let records;
   try {
-    // Try multiple possible locations for the CSV file
-    let csvPath;
-    let csvContent;
-    
-    const possiblePaths = [
-      path.join(process.cwd(), 'data.csv'),
-      path.join(process.cwd(), 'public', 'data.csv'),
-      path.join(process.cwd(), 'src', 'data.csv'),
-      path.join(process.cwd(), 'src', 'app', 'api', 'data', 'data.csv')
-    ];
-
-    let lastError;
-    for (const testPath of possiblePaths) {
-      try {
-        csvContent = await fs.readFile(testPath, 'utf-8');
-        csvPath = testPath;
-        console.log('Found CSV at:', csvPath);
-        break;
-      } catch (err) {
-        lastError = err;
-        continue;
-      }
+    const jsonPath = path.join(process.cwd(), 'public', 'data.json');
+    const jsonContent = await fs.readFile(jsonPath, 'utf-8');
+    records = JSON.parse(jsonContent);
+    if (!records || records.length === 0) {
+      console.error('[ERROR] No records parsed from data.json.');
+    } else {
+      console.log('[DEBUG] First 5 parsed records:', records.slice(0, 5));
     }
-
-    if (!csvContent) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to read CSV', 
-          details: lastError.message,
-          triedPaths: possiblePaths 
-        }), 
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    records = parse(csvContent, { columns: true, skip_empty_lines: true });
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: 'Failed to parse CSV', details: err.message }), 
+      JSON.stringify({ error: 'Failed to read or parse data.json', details: err.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -208,10 +183,24 @@ export async function GET(request) {
   // Find the paper
   let paper, index = 0;
   if (titleParam) {
-    index = records.findIndex(r => r.Title && r.Title.trim() === titleParam.trim());
+    // Normalize function: trim, lowercase, remove punctuation
+    const normalize = str => str
+      .replace(/[.,:;!?()\[\]{}"'`]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+    const normalizedTitleParam = normalize(titleParam);
+    // Debug: print normalized search title
+    console.log("[DEBUG] Normalized search title:", normalizedTitleParam);
+    // Debug: print all normalized JSON titles
+    const allNormalizedTitles = records.map(r => r.Title ? normalize(r.Title) : "");
+    console.log("[DEBUG] All normalized JSON titles:", allNormalizedTitles);
+
+    index = records.findIndex(r => r.Title && normalize(r.Title) === normalizedTitleParam);
     if (index === -1) {
       return new Response(
-        JSON.stringify({ error: 'Paper not found' }), 
+        JSON.stringify({ error: 'Paper not found', tried: titleParam, normalizedTried: normalizedTitleParam, allNormalizedTitles }), 
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -229,10 +218,11 @@ export async function GET(request) {
     paper = records[0];
   }
 
-  const link = paper.Link || paper.link || paper.URL || paper.url;
+  // Construct link from Code field
+  const link = paper.Code ? `https://www.ncbi.nlm.nih.gov/pmc/articles/PMC${paper.Code}/` : null;
   if (!link) {
     return new Response(
-      JSON.stringify({ error: 'No link found in CSV' }), 
+      JSON.stringify({ error: 'No Code found in data.json' }), 
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -256,33 +246,62 @@ export async function GET(request) {
     }
   }
 
-  // Return the data
-  return new Response(
-    JSON.stringify({
-      ...scrapedData,
-      csvTitle: paper.Title,
-      link,
-      index,
-      total: records.length
-    }), 
-    { 
-      status: 200, 
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
-      } 
+    // Prepare prompt based on demographic
+    let promptText = "";
+    try {
+      // Load prompts.md
+      const promptsPath = path.join(process.cwd(), "src", "app", "api", "searchArticles", "prompts.md");
+      const promptsContent = await fs.readFile(promptsPath, "utf-8");
+      if (demographic === "investor") {
+        // Extract investor prompt
+        const investorMatch = promptsContent.match(/Read the following space biology paper and summarize details relevant for a potential investor[\s\S]+?Write it as if preparing a short investor briefing rather than an academic abstract\./);
+        promptText = investorMatch ? investorMatch[0] : "Summarize for an investor.";
+      } else {
+        // Extract researcher prompt
+        const researcherMatch = promptsContent.match(/Read the following space biology paper and summarize it for a researcher and or student in the field[\s\S]+?terrestrial biomedical\s*sciences\."\*/);
+        promptText = researcherMatch ? researcherMatch[0].replace(/"\*$/, "") : "Summarize for a researcher.";
+      }
+    } catch (err) {
+      promptText = demographic === "investor" ? "Summarize for an investor." : "Summarize for a researcher.";
     }
-  );
-}
 
-export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+    // Compose the full prompt for GPT
+    const gptPrompt = `${promptText}\n\n---\n\nTitle: ${scrapedData.title}\n\nContent:\n${scrapedData.content}`;
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const response = await GET({ url });
-  const data = await response.json();
-  
-  res.status(response.status).json(data);
+    // Call OpenAI API
+    let summary = "";
+    try {
+      const openai = new OpenAI({ apiKey: process.env.GPT });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that summarizes space biology papers." },
+          { role: "user", content: gptPrompt }
+        ],
+        temperature: 0.2
+      });
+      summary = completion.choices[0].message.content;
+    } catch (err) {
+      summary = "Error generating summary: " + err.message;
+    }
+
+    // Return the summary and metadata
+    return new Response(
+      JSON.stringify({
+        summary,
+        csvTitle: paper.Title,
+        link,
+        index,
+        total: records.length,
+        demographic,
+        imageLinks: scrapedData.imageLinks
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+        }
+      }
+    );
 }
