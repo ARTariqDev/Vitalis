@@ -72,14 +72,12 @@ export default function LoginPage() {
   };
 
   const handleBackToHome = () => {
-    alert("clicked button")
     router.push('/');
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
@@ -178,15 +176,6 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Forgot Password */}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors duration-300"
-              >
-                Forgot your password?
-              </button>
-            </div>
 
             {/* Submit Button */}
             <button
