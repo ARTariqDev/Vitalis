@@ -19,13 +19,7 @@ export async function GET(request) {
     apikey: process.env.GPT,
     model: "gpt-4o-mini",
     temperature: 0.1,
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: `
+    input: `
                 You are a helpful assistant that filters article titles.
 
                 ### TASK
@@ -51,10 +45,6 @@ export async function GET(request) {
                 If no titles are relevant, output:
                 []
                 `,
-          },
-        ],
-      },
-    ],
   });
   console.log(response);
   return NextResponse.json({ result: response.choices[0].message.content });
