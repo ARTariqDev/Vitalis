@@ -1,5 +1,19 @@
 
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 export default function LandingPage() {
+  const router = useRouter();
+
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleSignup = () => {
+    router.push('/signup');
+  };
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
       <div className="max-w-4xl mx-auto text-center">
@@ -23,10 +37,16 @@ export default function LandingPage() {
         
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto px-4 animate-fade-in-delay-3">
-          <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-teal-500/25 active:scale-95">
+          <button 
+            onClick={handleLogin}
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-teal-500/25 active:scale-95"
+          >
             Login
           </button>
-          <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-teal-500 text-teal-600 font-semibold rounded-xl hover:bg-teal-500 hover:text-white transition-all duration-300 transform hover:scale-105 active:scale-95">
+          <button 
+            onClick={handleSignup}
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-teal-500 text-teal-600 font-semibold rounded-xl hover:bg-teal-500 hover:text-white transition-all duration-300 transform hover:scale-105 active:scale-95"
+          >
             Sign Up
           </button>
         </div>
