@@ -201,39 +201,24 @@ export default function SignupPage() {
 
             {/* Demographics */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
+              <label htmlFor="demographics" className="block text-sm font-semibold text-slate-700 mb-3">
                 Demographics
               </label>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="student-researcher"
-                    name="demographics"
-                    value="student-researcher"
-                    checked={formData.demographics === 'student-researcher'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-teal-600 focus:ring-teal-500 focus:ring-2"
-                  />
-                  <label htmlFor="student-researcher" className="ml-3 text-sm text-slate-700 cursor-pointer">
-                    Student/Researcher
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="investor"
-                    name="demographics"
-                    value="investor"
-                    checked={formData.demographics === 'investor'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-teal-600 focus:ring-teal-500 focus:ring-2"
-                  />
-                  <label htmlFor="investor" className="ml-3 text-sm text-slate-700 cursor-pointer">
-                    Investor
-                  </label>
-                </div>
-              </div>
+              <select
+                id="demographics"
+                name="demographics"
+                value={formData.demographics}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
+                  errors.demographics 
+                    ? 'border-red-300 focus:ring-red-500' 
+                    : 'border-slate-300 hover:border-teal-300'
+                }`}
+              >
+                <option value="" disabled>Select your demographic</option>
+                <option value="student-researcher">Student/Researcher</option>
+                <option value="investor">Investor</option>
+              </select>
               {errors.demographics && (
                 <p className="mt-1 text-sm text-red-600">{errors.demographics}</p>
               )}
