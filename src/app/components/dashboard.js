@@ -20,21 +20,36 @@ export default function Dashboard() {
       if (prompt) {
         setIsLoading(true);
         const res = await fetch(
-          `/searchArticles?prompt=${encodeURIComponent(prompt)}`
+          `/api/searchArticles?prompt=${encodeURIComponent(prompt)}`
         );
+        if (!res.ok) {
+          console.error("Error fetching /api/searchArticles:", res.status, await res.text());
+          setData([]);
+          return;
+        }
         const result = await res.json();
         console.log("result", result);
         let filteredTitles = [];
         try {
           filteredTitles = JSON.parse(result.result);
         } catch (e) {
+          console.error("Error parsing result.result:", e, result.result);
           filteredTitles = [];
         }
         const response = await fetch("/data.json");
+        if (!response.ok) {
+          console.error("Error fetching /data.json:", response.status, await response.text());
+          setData([]);
+          return;
+        }
         const allData = await response.json();
         console.log("response from /data.json \n", allData);
-
-        // setData(allData.filter((item) => filteredTitles.includes(item.Title)));
+        // Filter allData to only include articles whose Title matches filteredTitles
+        setData(
+          allData.filter((item) =>
+            filteredTitles.some((filtered) => filtered.Title === item.Title)
+          )
+        );
       } else {
         const response = await fetch("/data.json");
         if (!response.ok) {
@@ -46,8 +61,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error loading data:", error);
-      //TODO: change this to smth
-      setData("");
+      setData([]);
     } finally {
       setIsLoading(false);
     }
@@ -207,10 +221,7 @@ export default function Dashboard() {
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
               />
               <button
-                type="button"
-                onClick={() => {
-                  setIsLoading(true);
-                }}
+                type="submit"
                 className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300"
                 disabled={isLoading || !prompt}
               >
