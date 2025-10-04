@@ -1,135 +1,99 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [email, setEmail] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [userLoaded, setUserLoaded] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Load user info and data
-  useEffect(() => {
-    // Fetch user info (email) from /api/user with email query param
-    const fetchUserInfo = async () => {
-      // For demo, get email from localStorage or set a default
-      let storedEmail = localStorage.getItem('userEmail');
-      if (!storedEmail) {
-        // Set your actual email if not present
-        storedEmail = 'artariqdev@gmail.com';
-        localStorage.setItem('userEmail', storedEmail);
-      }
-      try {
-        const res = await fetch(`/api/user?email=${encodeURIComponent(storedEmail)}`);
-        if (res.ok) {
-          const user = await res.json();
-          setEmail(user.email || storedEmail);
-        } else {
-          setEmail(storedEmail);
-        }
-      } catch (err) {
-        setEmail(storedEmail);
-      } finally {
-        setUserLoaded(true);
-      }
-    };
 
-    if (!userLoaded) {
-      fetchUserInfo();
-      return;
+  const loadData = async () => {
+    try {
+      if (prompt) {
+        setIsLoading(true);
+        const res = await fetch(
+          `/searchArticles?prompt=${encodeURIComponent(prompt)}`
+        );
+        const result = await res.json();
+        console.log("result", result);
+        let filteredTitles = [];
+        try {
+          filteredTitles = JSON.parse(result.result);
+        } catch (e) {
+          filteredTitles = [];
+        }
+        const response = await fetch("/data.json");
+        const allData = await response.json();
+        console.log("response from /data.json \n", allData);
+
+        // setData(allData.filter((item) => filteredTitles.includes(item.Title)));
+      } else {
+        const response = await fetch("/data.json");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const jsonData = await response.json();
+        console.log("response from /data.json \n", jsonData);
+        setData(jsonData);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      //TODO: change this to smth
+      setData("");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const loadData = async () => {
-      try {
-        if (prompt && email) {
-          setIsLoading(true);
-          const res = await fetch(`/api/searchArticles?prompt=${encodeURIComponent(prompt)}&email=${encodeURIComponent(email)}`);
-          const result = await res.json();
-          let filteredTitles = [];
-          try {
-            filteredTitles = JSON.parse(result.result);
-          } catch (e) {
-            filteredTitles = [];
-          }
-          const response = await fetch('/data.json');
-          const allData = await response.json();
-          setData(allData.filter(item => filteredTitles.includes(item.Title)));
-        } else {
-          const response = await fetch('/data.json');
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const jsonData = await response.json();
-          setData(jsonData);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-        const sampleData = [
-          {
-            "Title": "Microgravity Reduces the Differentiation and Regenerative Potential of Embryonic Stem Cells",
-            "Code": "7998608",
-            "Tags": "Microgravity Effects; Stem Cells & Regeneration"
-          },
-          {
-            "Title": "Spaceflight Modulates the Expression of Key Oxidative Stress and Cell Cycle Related Genes in Heart",
-            "Code": "8396460", 
-            "Tags": "Microgravity Effects; Cardiovascular & Circulatory"
-          },
-          {
-            "Title": "Mice in Bion-M 1 space mission: training and selection",
-            "Code": "4136787",
-            "Tags": "General Space Biology"
-          }
-        ];
-        setData(sampleData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+  useEffect(() => {
     loadData();
-  }, [prompt, email, userLoaded]);
+  }, [userLoaded]);
 
   // Filter data based on search term and selected tags
   const filteredData = useMemo(() => {
-    const filtered = data.filter(item => {
+    const filtered = data.filter((item) => {
       // Search filter
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch =
+        searchTerm === "" ||
         item.Title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.Code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.Tags && item.Tags.toLowerCase().includes(searchTerm.toLowerCase()));
+        (item.Tags &&
+          item.Tags.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Tag filter - item matches if it contains ANY of the selected tags
-      const itemTags = item.Tags ? item.Tags.split(';').map(tag => tag.trim()) : [];
-      
+      const itemTags = item.Tags
+        ? item.Tags.split(";").map((tag) => tag.trim())
+        : [];
+
       let matchesTags;
       if (selectedTags.length === 0) {
         // When no specific tags selected, show all items
         matchesTags = true;
       } else {
         // When specific tags are selected, only show items that match those tags
-        matchesTags = selectedTags.some(selectedTag => 
+        matchesTags = selectedTags.some((selectedTag) =>
           itemTags.includes(selectedTag)
         );
       }
 
       return matchesSearch && matchesTags;
     });
-    
-    console.log('Filtering:', {
+
+    console.log("Filtering:", {
       searchTerm,
       selectedTags,
       totalData: data.length,
-      filteredResults: filtered.length
+      filteredResults: filtered.length,
     });
-    
+
     return filtered;
   }, [data, searchTerm, selectedTags]);
 
@@ -137,20 +101,23 @@ export default function Dashboard() {
   // This shows what tags are available to filter by
   const availableTags = useMemo(() => {
     // First apply only search filter to get base results
-    const searchFilteredData = data.filter(item => {
-      return searchTerm === '' || 
+    const searchFilteredData = data.filter((item) => {
+      return (
+        searchTerm === "" ||
         item.Title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.Code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.Tags && item.Tags.toLowerCase().includes(searchTerm.toLowerCase()));
+        (item.Tags &&
+          item.Tags.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     });
-    
+
     const tagSet = new Set();
-    searchFilteredData.forEach(item => {
+    searchFilteredData.forEach((item) => {
       if (item.Tags) {
-        item.Tags.split(';').forEach(tag => {
+        item.Tags.split(";").forEach((tag) => {
           const trimmedTag = tag.trim();
           // Exclude "General Space Biology" from available filter tags
-          if (trimmedTag !== 'General Space Biology') {
+          if (trimmedTag !== "General Space Biology") {
             tagSet.add(trimmedTag);
           }
         });
@@ -161,27 +128,34 @@ export default function Dashboard() {
 
   // Clear selected tags that are no longer available when search changes
   useEffect(() => {
-    setSelectedTags(prev => prev.filter(tag => availableTags.includes(tag)));
+    setSelectedTags((prev) =>
+      prev.filter((tag) => availableTags.includes(tag))
+    );
   }, [availableTags]);
 
   const handleTagToggle = (tag) => {
-    console.log('Tag clicked:', tag);
-    setSelectedTags(prev => {
-      const newTags = prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
+    console.log("Tag clicked:", tag);
+    setSelectedTags((prev) => {
+      const newTags = prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
         : [...prev, tag];
-      console.log('Selected tags updated:', newTags);
+      console.log("Selected tags updated:", newTags);
       return newTags;
     });
   };
 
   const clearAllFilters = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedTags([]);
   };
 
   const handleLogout = () => {
-    router.push('/');
+    router.push("/");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await loadData();
   };
 
   if (isLoading) {
@@ -223,39 +197,27 @@ export default function Dashboard() {
         {/* Search and Filters Section */}
         <div className="mb-8">
           {/* Search Bar + Prompt Input (no demographic input) */}
-          <div className="mb-6">
+          <form className="mb-6" onSubmit={handleSubmit}>
             <div className="relative max-w-2xl mx-auto flex flex-col gap-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by title, code, or tags..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
-                />
-              </div>
               <input
                 type="text"
                 placeholder="Prompt (e.g. 'space medicine')"
                 value={prompt}
-                onChange={e => setPrompt(e.target.value)}
+                onChange={(e) => setPrompt(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
               />
               <button
                 type="button"
-                onClick={() => { setIsLoading(true); }}
+                onClick={() => {
+                  setIsLoading(true);
+                }}
                 className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300"
-                disabled={isLoading || !prompt || !email}
+                disabled={isLoading || !prompt}
               >
-                {isLoading ? 'Searching...' : 'Search with Prompt'}
+                {isLoading ? "Searching..." : "Search with Prompt"}
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Mobile Filter Toggle */}
           <div className="lg:hidden mb-4">
@@ -264,21 +226,30 @@ export default function Dashboard() {
               className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 flex items-center justify-between"
             >
               <span>Filters ({selectedTags.length})</span>
-              <svg 
-                className={`h-5 w-5 transform transition-transform ${showMobileFilters ? 'rotate-180' : ''}`} 
-                fill="none" 
-                viewBox="0 0 24 24" 
+              <svg
+                className={`h-5 w-5 transform transition-transform ${
+                  showMobileFilters ? "rotate-180" : ""
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
           </div>
 
           {/* Category Tags */}
-          <div className={`${showMobileFilters ? 'block' : 'hidden'} lg:block`}>
+          <div className={`${showMobileFilters ? "block" : "hidden"} lg:block`}>
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="text-sm font-semibold text-slate-700 mr-2">Categories:</span>
+              <span className="text-sm font-semibold text-slate-700 mr-2">
+                Categories:
+              </span>
               {selectedTags.length > 0 && (
                 <button
                   onClick={clearAllFilters}
@@ -289,14 +260,14 @@ export default function Dashboard() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {availableTags.map(tag => (
+              {availableTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => handleTagToggle(tag)}
                   className={`px-3 py-1 text-sm rounded-full transition-all duration-300 ${
                     selectedTags.includes(tag)
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg transform scale-105'
-                      : 'bg-white text-slate-700 border border-slate-300 hover:border-teal-300 hover:bg-teal-50'
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg transform scale-105"
+                      : "bg-white text-slate-700 border border-slate-300 hover:border-teal-300 hover:bg-teal-50"
                   }`}
                 >
                   {tag}
@@ -306,12 +277,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-
         {/* Results Summary */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-slate-600">
-            Showing <span className="font-semibold text-slate-800">{filteredData.length}</span> of{' '}
-            <span className="font-semibold text-slate-800">{data.length}</span> research entries
+            Showing{" "}
+            <span className="font-semibold text-slate-800">
+              {filteredData.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-slate-800">{data.length}</span>{" "}
+            research entries
           </p>
           {(searchTerm || selectedTags.length > 0) && (
             <button
@@ -345,7 +320,7 @@ export default function Dashboard() {
               {/* Tags */}
               {item.Tags && (
                 <div className="flex flex-wrap gap-1 mb-4">
-                  {item.Tags.split(';').map((tag, tagIndex) => (
+                  {item.Tags.split(";").map((tag, tagIndex) => (
                     <span
                       key={tagIndex}
                       className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md"
@@ -368,11 +343,23 @@ export default function Dashboard() {
         {filteredData.length === 0 && (
           <div className="text-center py-12">
             <div className="w-24 h-24 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.515-.952-6.071-2.5L3.515 9.978A11.964 11.964 0 0112 4c2.34 0 4.515.952 6.071 2.5L20.485 9.978A11.964 11.964 0 0112 20c-2.34 0-4.515-.952-6.071-2.5" />
+              <svg
+                className="w-12 h-12 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.515-.952-6.071-2.5L3.515 9.978A11.964 11.964 0 0112 4c2.34 0 4.515.952 6.071 2.5L20.485 9.978A11.964 11.964 0 0112 20c-2.34 0-4.515-.952-6.071-2.5"
+                />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">No results found</h3>
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">
+              No results found
+            </h3>
             <p className="text-slate-500 mb-4">
               Try adjusting your search terms or selected categories
             </p>

@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    demographics: ''
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    demographics: "",
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -34,29 +34,29 @@ export default function SignupPage() {
     const newErrors = {};
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = "Full name is required";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (!formData.demographics) {
-      newErrors.demographics = 'Please select your demographics';
+      newErrors.demographics = "Please select your demographics";
     }
 
     setErrors(newErrors);
@@ -65,28 +65,36 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
-    
+
     // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // Here you would typically make an API call to create the user
-      console.log('Signup data:', formData);
-      router.push('/login?message=Account created successfully');
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          demographics: formData.demographics,
+        }),
+      });
+      if (res.ok) {
+        router.push("/login");
+      }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleBackToHome = () => {
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -109,7 +117,10 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name */}
             <div>
-              <label htmlFor="fullName" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Full Name
               </label>
               <input
@@ -119,9 +130,9 @@ export default function SignupPage() {
                 value={formData.fullName}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
-                  errors.fullName 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-slate-300 hover:border-teal-300'
+                  errors.fullName
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-slate-300 hover:border-teal-300"
                 }`}
                 placeholder="Enter your full name"
               />
@@ -132,7 +143,10 @@ export default function SignupPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -142,9 +156,9 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
-                  errors.email 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-slate-300 hover:border-teal-300'
+                  errors.email
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-slate-300 hover:border-teal-300"
                 }`}
                 placeholder="Enter your email address"
               />
@@ -155,7 +169,10 @@ export default function SignupPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Password
               </label>
               <input
@@ -165,9 +182,9 @@ export default function SignupPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
-                  errors.password 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-slate-300 hover:border-teal-300'
+                  errors.password
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-slate-300 hover:border-teal-300"
                 }`}
                 placeholder="Create a secure password"
               />
@@ -178,7 +195,10 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Confirm Password
               </label>
               <input
@@ -188,20 +208,25 @@ export default function SignupPage() {
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
-                  errors.confirmPassword 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-slate-300 hover:border-teal-300'
+                  errors.confirmPassword
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-slate-300 hover:border-teal-300"
                 }`}
                 placeholder="Confirm your password"
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.confirmPassword}
+                </p>
               )}
             </div>
 
             {/* Demographics */}
             <div>
-              <label htmlFor="demographics" className="block text-sm font-semibold text-slate-700 mb-3">
+              <label
+                htmlFor="demographics"
+                className="block text-sm font-semibold text-slate-700 mb-3"
+              >
                 Demographics
               </label>
               <select
@@ -210,17 +235,21 @@ export default function SignupPage() {
                 value={formData.demographics}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300 ${
-                  errors.demographics 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-slate-300 hover:border-teal-300'
+                  errors.demographics
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-slate-300 hover:border-teal-300"
                 }`}
               >
-                <option value="" disabled>Select your demographic</option>
+                <option value="" disabled>
+                  Select your demographic
+                </option>
                 <option value="student-researcher">Student/Researcher</option>
                 <option value="investor">Investor</option>
               </select>
               {errors.demographics && (
-                <p className="mt-1 text-sm text-red-600">{errors.demographics}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.demographics}
+                </p>
               )}
             </div>
 
@@ -236,17 +265,17 @@ export default function SignupPage() {
                   Creating Account...
                 </div>
               ) : (
-                'Create Account'
+                "Create Account"
               )}
             </button>
 
             {/* Login Link */}
             <div className="text-center">
               <p className="text-slate-600 text-sm">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push("/login")}
                   className="text-teal-600 hover:text-teal-700 font-semibold transition-colors duration-300"
                 >
                   Login here
