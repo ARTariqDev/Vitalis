@@ -3,29 +3,74 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
+
 export default function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [email, setEmail] = useState('');
+  const [userLoaded, setUserLoaded] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Load data from JSON file
+  // Load user info and data
   useEffect(() => {
+    // Fetch user info (email) from /api/user with email query param
+    const fetchUserInfo = async () => {
+      // For demo, get email from localStorage or set a default
+      let storedEmail = localStorage.getItem('userEmail');
+      if (!storedEmail) {
+        // Set your actual email if not present
+        storedEmail = 'artariqdev@gmail.com';
+        localStorage.setItem('userEmail', storedEmail);
+      }
+      try {
+        const res = await fetch(`/api/user?email=${encodeURIComponent(storedEmail)}`);
+        if (res.ok) {
+          const user = await res.json();
+          setEmail(user.email || storedEmail);
+        } else {
+          setEmail(storedEmail);
+        }
+      } catch (err) {
+        setEmail(storedEmail);
+      } finally {
+        setUserLoaded(true);
+      }
+    };
+
+    if (!userLoaded) {
+      fetchUserInfo();
+      return;
+    }
+
     const loadData = async () => {
       try {
-        console.log('Loading data from /data.json...');
-        const response = await fetch('/data.json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (prompt && email) {
+          setIsLoading(true);
+          const res = await fetch(`/api/searchArticles?prompt=${encodeURIComponent(prompt)}&email=${encodeURIComponent(email)}`);
+          const result = await res.json();
+          let filteredTitles = [];
+          try {
+            filteredTitles = JSON.parse(result.result);
+          } catch (e) {
+            filteredTitles = [];
+          }
+          const response = await fetch('/data.json');
+          const allData = await response.json();
+          setData(allData.filter(item => filteredTitles.includes(item.Title)));
+        } else {
+          const response = await fetch('/data.json');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const jsonData = await response.json();
+          setData(jsonData);
         }
-        const jsonData = await response.json();
-        console.log('Data loaded successfully:', jsonData.length, 'items');
-        setData(jsonData);
       } catch (error) {
         console.error('Error loading data:', error);
-        // Fallback to sample data if file doesn't exist
         const sampleData = [
           {
             "Title": "Microgravity Reduces the Differentiation and Regenerative Potential of Embryonic Stem Cells",
@@ -43,7 +88,6 @@ export default function Dashboard() {
             "Tags": "General Space Biology"
           }
         ];
-        console.log('Using sample data');
         setData(sampleData);
       } finally {
         setIsLoading(false);
@@ -51,7 +95,7 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, []);
+  }, [prompt, email, userLoaded]);
 
   // Filter data based on search term and selected tags
   const filteredData = useMemo(() => {
@@ -178,21 +222,38 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters Section */}
         <div className="mb-8">
-          {/* Search Bar */}
+          {/* Search Bar + Prompt Input (no demographic input) */}
           <div className="mb-6">
-            <div className="relative max-w-2xl mx-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            <div className="relative max-w-2xl mx-auto flex flex-col gap-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by title, code, or tags..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
+                />
               </div>
               <input
                 type="text"
-                placeholder="Search by title, code, or tags..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
+                placeholder="Prompt (e.g. 'space medicine')"
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
               />
+              <button
+                type="button"
+                onClick={() => { setIsLoading(true); }}
+                className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300"
+                disabled={isLoading || !prompt || !email}
+              >
+                {isLoading ? 'Searching...' : 'Search with Prompt'}
+              </button>
             </div>
           </div>
 
@@ -244,6 +305,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
 
         {/* Results Summary */}
         <div className="mb-6 flex items-center justify-between">
