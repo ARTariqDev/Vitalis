@@ -9,10 +9,6 @@ export default function PaperClient() {
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
-<<<<<<< Updated upstream
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState(null);
-=======
   const comments = [
     { username: "Farjad123", comment: "Such an interesting study!" },
     { username: "AbuBakr45", comment: "Such an interesting study!" },
@@ -20,7 +16,6 @@ export default function PaperClient() {
     { username: "Wasiq1", comment: "Such an interesting study!" },
     { username: "Aura43", comment: "Such an interesting study!" },
   ];
->>>>>>> Stashed changes
 
   // Extract paper title from query string using Next.js useSearchParams
   const searchParams = useSearchParams();
@@ -63,10 +58,10 @@ export default function PaperClient() {
     setSaveMessage(null);
 
     try {
-      const response = await fetch('/api/save-paper', {
-        method: 'POST',
+      const response = await fetch("/api/save-paper", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ paperData }),
       });
@@ -74,16 +69,22 @@ export default function PaperClient() {
       const result = await response.json();
 
       if (response.ok) {
-        setSaveMessage({ type: 'success', text: 'Paper saved to journal successfully!' });
+        setSaveMessage({
+          type: "success",
+          text: "Paper saved to journal successfully!",
+        });
       } else {
-        setSaveMessage({ 
-          type: 'error', 
-          text: result.message || result.error || 'Failed to save paper' 
+        setSaveMessage({
+          type: "error",
+          text: result.message || result.error || "Failed to save paper",
         });
       }
     } catch (error) {
-      console.error('Error saving paper:', error);
-      setSaveMessage({ type: 'error', text: 'Network error. Please try again.' });
+      console.error("Error saving paper:", error);
+      setSaveMessage({
+        type: "error",
+        text: "Network error. Please try again.",
+      });
     } finally {
       setIsSaving(false);
       // Clear message after 3 seconds
@@ -180,32 +181,39 @@ export default function PaperClient() {
             <button
               style={{ alignSelf: "center" }}
               className={`px-4 py-2 rounded-lg font-medium text-white transition-colors duration-300 mt-4 text-lg ${
-                isSaving 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-teal-500 hover:bg-teal-600'
+                isSaving
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-teal-500 hover:bg-teal-600"
               }`}
               onClick={handleSaveToJournal}
               disabled={isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save to Journal'}
+              {isSaving ? "Saving..." : "Save to Journal"}
             </button>
 
             {saveMessage && (
-              <div className={`mt-4 p-3 rounded-lg text-center ${
-                saveMessage.type === 'success' 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
+              <div
+                className={`mt-4 p-3 rounded-lg text-center ${
+                  saveMessage.type === "success"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
                 {saveMessage.text}
               </div>
             )}
 
-            <div id="disqus_thread" style={{ padding: '8px', borderRadius: '8px' }}></div>
-            <Comments article={{
-              url: paperData.link,
-              id: paperData.link,
-              title: paperData.csvTitle
-            }} />
+            <div
+              id="disqus_thread"
+              style={{ padding: "8px", borderRadius: "8px" }}
+            ></div>
+            <Comments
+              article={{
+                url: paperData.link,
+                id: paperData.link,
+                title: paperData.csvTitle,
+              }}
+            />
           </div>
         )}
         {activeTab === "images" && (
