@@ -10,16 +10,10 @@ export default function PaperClient() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Extract paper title from query string using Next.js useSearchParams
-  const [paperTitle, setPaperTitle] = useState("");
+  const searchParams = useSearchParams();
+  const paperTitle = searchParams.get("title") || "";
 
   // Extract paper title from query string on client mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      setPaperTitle(params.get("title") || "");
-    }
-  }, []);
-  console.log(paperTitle);
 
   useEffect(() => {
     console.log("Mounting");
