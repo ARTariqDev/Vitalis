@@ -28,3 +28,6 @@ export async function middleware(req) {
 }
 
 // a matcher to run middleware on all routes
+export const config = {
+  matcher: ["/", "/login", "/dashboard", "/paper"],
+};
