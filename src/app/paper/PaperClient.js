@@ -143,8 +143,7 @@ export default function PaperClient() {
               Save to Journal
             </button>
 
-            {/* Disqus comments below summary (debug: raw embed) */}
-            <div id="disqus_thread" style={{ border: '2px solid red', padding: '8px', borderRadius: '8px' }}></div>
+            <div id="disqus_thread" style={{  padding: '8px', borderRadius: '8px' }}></div>
             <Comments article={{
               url: paperData.link,
               id: paperData.link,
