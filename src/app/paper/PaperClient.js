@@ -9,10 +9,8 @@ export default function PaperClient() {
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
-<<<<<<< Updated upstream
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
-=======
   const comments = [
     { username: "Farjad123", comment: "Such an interesting study!" },
     { username: "AbuBakr45", comment: "Such an interesting study!" },
@@ -20,7 +18,6 @@ export default function PaperClient() {
     { username: "Wasiq1", comment: "Such an interesting study!" },
     { username: "Aura43", comment: "Such an interesting study!" },
   ];
->>>>>>> Stashed changes
 
   // Extract paper title from query string using Next.js useSearchParams
   const searchParams = useSearchParams();
