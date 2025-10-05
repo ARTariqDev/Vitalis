@@ -4,19 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import InfographicsCarousel from "../components/InfographicsCarousel";
 import Comments from "../components/comments";
 
-
-
 export default function PaperClient() {
   const router = useRouter();
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState(null);
 
   // Extract paper title from query string using Next.js useSearchParams
   const searchParams = useSearchParams();
   const paperTitle = searchParams.get("title") || "";
-
-  // Extract paper title from query string on client mount
 
   useEffect(() => {
     console.log("Mounting");
@@ -49,6 +47,39 @@ export default function PaperClient() {
         setIsLoading(false);
       });
   }, [paperTitle]);
+
+  const handleSaveToJournal = async () => {
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch('/api/save-paper', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paperData }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSaveMessage({ type: 'success', text: 'Paper saved to journal successfully!' });
+      } else {
+        setSaveMessage({ 
+          type: 'error', 
+          text: result.message || result.error || 'Failed to save paper' 
+        });
+      }
+    } catch (error) {
+      console.error('Error saving paper:', error);
+      setSaveMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsSaving(false);
+      // Clear message after 3 seconds
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -138,12 +169,28 @@ export default function PaperClient() {
             </pre>
             <button
               style={{ alignSelf: "center" }}
-              className={`px-4 py-2 rounded-lg font-medium text-white bg-teal-500 transition-colors duration-300 hover:bg-teal-600 hover:text-white mt-4 text-lg`}
+              className={`px-4 py-2 rounded-lg font-medium text-white transition-colors duration-300 mt-4 text-lg ${
+                isSaving 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-teal-500 hover:bg-teal-600'
+              }`}
+              onClick={handleSaveToJournal}
+              disabled={isSaving}
             >
-              Save to Journal
+              {isSaving ? 'Saving...' : 'Save to Journal'}
             </button>
 
-            <div id="disqus_thread" style={{  padding: '8px', borderRadius: '8px' }}></div>
+            {saveMessage && (
+              <div className={`mt-4 p-3 rounded-lg text-center ${
+                saveMessage.type === 'success' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {saveMessage.text}
+              </div>
+            )}
+
+            <div id="disqus_thread" style={{ padding: '8px', borderRadius: '8px' }}></div>
             <Comments article={{
               url: paperData.link,
               id: paperData.link,
