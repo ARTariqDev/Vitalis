@@ -6,8 +6,10 @@ const options = {};
 let client;
 let clientPromise;
 
+console.log("DEBUG: process.env.MONGODB_URI:", process.env.MONGODB_URI);
+console.log("DEBUG: uri:", uri);
 if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env');
+  throw new Error('Please add your Mongo URI to .env: ' + uri);
 }
 
 if (process.env.NODE_ENV === 'development') {
