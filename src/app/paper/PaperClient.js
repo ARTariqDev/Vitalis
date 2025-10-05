@@ -95,7 +95,7 @@ export default function PaperClient() {
             View Original Paper
           </a>
         </div>
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <div className="mb-8 flex gap-4">
             <button
               className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 ${
@@ -120,19 +120,25 @@ export default function PaperClient() {
           </div>
           <button
             onClick={() => router.push("/dashboard")}
-            className="mb-6 px-5 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors duration-300"
+            className="mb-6 px-5 py-2 -translate-y-2 bg-teal-500 text-white rounded-lg hover:bg-teal-700 transition-colors duration-300"
           >
             ← Back to Dashboard
           </button>
         </div>
         {activeTab === "summary" && (
-          <div className="bg-white/80 rounded-xl p-6 shadow mb-8">
+          <div className="bg-white/80 rounded-xl p-6 shadow mb-8 flex flex-col">
             <h2 className="text-xl font-semibold mb-4 text-slate-700">
               AI Summary
             </h2>
             <pre className="whitespace-pre-wrap text-slate-800 text-base">
               {paperData.summary}
             </pre>
+            <button
+              style={{ alignSelf: "center" }}
+              className={`px-4 py-2 rounded-lg font-medium text-white bg-teal-500 transition-colors duration-300 hover:bg-teal-600 hover:text-white mt-4 text-lg`}
+            >
+              Save to Journal
+            </button>
           </div>
         )}
         {activeTab === "images" && (
