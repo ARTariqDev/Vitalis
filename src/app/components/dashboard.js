@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
-
 export default function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState([]);
@@ -206,6 +205,12 @@ export default function Dashboard() {
                 </span>
               </h1>
               <span className="text-slate-500 text-sm">Research Dashboard</span>
+              <button
+                onClick={() => router.push("/journal")}
+                className="ml-4 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors duration-300 cursor-pointer"
+              >
+                Open Journal
+              </button>
             </div>
             <button
               onClick={handleLogout}

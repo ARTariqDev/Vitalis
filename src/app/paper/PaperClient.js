@@ -9,8 +9,18 @@ export default function PaperClient() {
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
+<<<<<<< Updated upstream
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
+=======
+  const comments = [
+    { username: "Farjad123", comment: "Such an interesting study!" },
+    { username: "AbuBakr45", comment: "Such an interesting study!" },
+    { username: "ART13", comment: "Such an interesting study!" },
+    { username: "Wasiq1", comment: "Such an interesting study!" },
+    { username: "Aura43", comment: "Such an interesting study!" },
+  ];
+>>>>>>> Stashed changes
 
   // Extract paper title from query string using Next.js useSearchParams
   const searchParams = useSearchParams();
@@ -114,7 +124,7 @@ export default function PaperClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2 text-slate-800">
           {paperData.csvTitle}
@@ -212,6 +222,15 @@ export default function PaperClient() {
             )}
           </div>
         )}
+      </div>
+      <div className="w-full bg-white max-w-4xl px-4 py-8 mx-2 rounded-sm">
+        <h3>Comments: </h3>
+        {comments.map((comment, idx) => (
+          <li key={idx} className="list-none my-3 p-3 border border-teal-300">
+            <div className="bold text-lg">{comment.username}</div>
+            <div>{comment.comment}</div>
+          </li>
+        ))}
       </div>
     </div>
   );
