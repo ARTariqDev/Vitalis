@@ -9,6 +9,8 @@ export default function PaperClient() {
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState(null);
   const comments = [
     { username: "Farjad123", comment: "Such an interesting study!" },
     { username: "AbuBakr45", comment: "Such an interesting study!" },
@@ -240,6 +242,7 @@ export default function PaperClient() {
           </li>
         ))}
       </div>
+         
     </div>
   );
 }
