@@ -23,12 +23,16 @@ export default function Dashboard() {
           `/api/searchArticles?prompt=${encodeURIComponent(prompt)}`
         );
         if (!res.ok) {
-          console.error("Error fetching /api/searchArticles:", res.status, await res.text());
+          console.error(
+            "Error fetching /api/searchArticles:",
+            res.status,
+            await res.text()
+          );
           setData([]);
           return;
         }
         const result = await res.json();
-        console.log("result", result);
+        console.log("result", result.result);
         let filteredTitles = [];
         try {
           filteredTitles = JSON.parse(result.result);
@@ -38,7 +42,11 @@ export default function Dashboard() {
         }
         const response = await fetch("/data.json");
         if (!response.ok) {
-          console.error("Error fetching /data.json:", response.status, await response.text());
+          console.error(
+            "Error fetching /data.json:",
+            response.status,
+            await response.text()
+          );
           setData([]);
           return;
         }
@@ -163,8 +171,8 @@ export default function Dashboard() {
     setSelectedTags([]);
   };
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    await fetch("/api/logout");
   };
 
   const handleSubmit = async (e) => {
@@ -215,7 +223,7 @@ export default function Dashboard() {
             <div className="relative max-w-2xl mx-auto flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Prompt (e.g. 'space medicine')"
+                placeholder="Prompt (e.g. 'space')"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
