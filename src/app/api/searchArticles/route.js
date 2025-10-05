@@ -104,6 +104,7 @@ export async function GET(request) {
             2. Choose only the article object whose title would most likely appeal to the demographic and the prompt which is provided by the user.
             3. You must return atleast 2 items no matter what.
             4. Respond **only** with a valid JSON array of objects of the articles — no commentary, no explanations, and no markdown formatting.
+            5. Use the following link and incroporate any useful information from here into your summaries: https://science.nasa.gov/biological-physical/data/: 
             The prompt can be of the user asking for any type of article. focus on the prompt and then return the articles based on demographic
             ### OUTPUT FORMAT
             [
