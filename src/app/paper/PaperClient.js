@@ -5,13 +5,14 @@ import InfographicsCarousel from "../components/InfographicsCarousel";
 
 export default function PaperClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [paperData, setPaperData] = useState(null);
   const [activeTab, setActiveTab] = useState("summary");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Extract paper title from query string (/paper?title=paper_name)
-  const paperTitle = searchParams.get("title") || "";
+  // Extract paper title from query string (/paper?title=paper_name) using browser API
+  const paperTitle = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("title") || ""
+    : "";
 
   useEffect(() => {
     if (!paperTitle) return;
