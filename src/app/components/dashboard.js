@@ -173,6 +173,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await fetch("/api/logout");
+    router.push("/login");
   };
 
   const handleSubmit = async (e) => {
@@ -207,7 +208,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors duration-300"
+              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors duration-300 inline-block z-10 relative cursor-pointer"
             >
               Logout
             </button>

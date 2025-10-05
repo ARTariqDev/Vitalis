@@ -310,8 +310,8 @@ export async function GET(request) {
         : "Summarize for a researcher.";
   }
 
-  // Compose the full prompt for GPT
-  const gptPrompt = `${promptText}\n\n---\n\nTitle: ${scrapedData.title}\n\nContent:\n${scrapedData.content}`;
+  // Compose the full prompt for GPT, instructing to return only plain text
+  const gptPrompt = `${promptText}\n\n---\n\nTitle: ${scrapedData.title}\n\nContent:\n${scrapedData.content}\n\nIMPORTANT: Only return plain text in your response. Do not use any HTML, Markdown, or other markup including asterisks used as markup.`;
 
   // Call OpenAI API
   let summary = "";
@@ -323,7 +323,7 @@ export async function GET(request) {
         {
           role: "system",
           content:
-            "You are a helpful assistant that summarizes space biology papers.",
+            "You are a helpful assistant that summarizes space biology papers. Your output should not include ANY markdown. The response should include only text. ",
         },
         { role: "user", content: gptPrompt },
       ],
