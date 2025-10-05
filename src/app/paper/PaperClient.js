@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import InfographicsCarousel from "../components/InfographicsCarousel";
-import { DiscussionEmbed } from "disqus-react";
+import Comments from "../components/comments";
+
+
 
 export default function PaperClient() {
   const router = useRouter();
@@ -141,16 +143,13 @@ export default function PaperClient() {
               Save to Journal
             </button>
 
-            {/* Disqus comments below summary */}
-            <DiscussionEmbed
-              shortname="vitalis-1"
-              config={{
-                url: typeof window !== "undefined" ? window.location.href : "",
-                identifier: paperData.link || paperData.csvTitle,
-                title: paperData.csvTitle,
-                language: "en"
-              }}
-            />
+            {/* Disqus comments below summary (debug: raw embed) */}
+            <div id="disqus_thread" style={{ border: '2px solid red', padding: '8px', borderRadius: '8px' }}></div>
+            <Comments article={{
+              url: paperData.link,
+              id: paperData.link,
+              title: paperData.csvTitle
+            }} />
           </div>
         )}
         {activeTab === "images" && (
