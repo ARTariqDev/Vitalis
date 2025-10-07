@@ -1,6 +1,7 @@
 import clientPromise from "../_db";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import paperNode from "@/app/components/paperNode";
 
 export async function POST(req) {
   try {
@@ -28,6 +29,8 @@ export async function POST(req) {
       email,
       password: hashedPassword,
       demographics,
+      paperNodes: [],
+      edges: [],
       createdAt: new Date(),
     };
     await users.insertOne(user);

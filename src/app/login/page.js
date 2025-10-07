@@ -56,14 +56,18 @@ export default function LoginPage() {
           password: formData.password,
         }),
       });
-      if (res.ok) {
-        console.log("successful");
-        router.push("/dashboard");
-      } else {
-        console.log("not successful");
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Login failed");
       }
+      console.log("successful");
+      router.push("/dashboard");
     } catch (error) {
-      setErrors({ general: "Invalid email or password. Please try again." });
+      setErrors({
+        general:
+          error.message || "Invalid email or password. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
