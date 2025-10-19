@@ -25,7 +25,7 @@ const Comments = ({ article }) => {
     return (
         <hyvor-talk-comments
             ref={ref}
-            website-id="14252"
+            website-id="14349"
             page-id={pageId}
         ></hyvor-talk-comments>
     );
