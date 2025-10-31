@@ -53,3 +53,4 @@ This project is submitted to the **Google Chrome Built-in AI Challenge 2025** an
 - Client-side AI processing for privacy and performance
 - Real-world use case solving the problem of information overload in scientific research
 - Hybrid approach with both Prompt and Summarizer APIs for different use cases
+# Vitalis-gemini
