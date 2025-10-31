@@ -2,7 +2,12 @@ import { promises as fs } from "fs";
 import path from "path";
 import { parse } from "csv-parse/sync";
 import * as cheerio from "cheerio";
-import OpenAI from "openai";
+
+/**
+ * Note: Chrome's built-in AI APIs (including Summarizer API) are client-side only.
+ * This API route scrapes paper content and returns it for client-side processing
+ * using Chrome's Summarizer API or Prompt API (Gemini Nano).
+ */
 
 // In-memory cache for scraped papers (persists during warm starts)
 const cache = new Map();
@@ -310,41 +315,26 @@ export async function GET(request) {
         : "Summarize for a researcher.";
   }
 
-  // Compose the full prompt for GPT, instructing to return only plain text
-  const gptPrompt = `${promptText}\n\n---\n\nTitle: ${scrapedData.title}\n\nContent:\n${scrapedData.content}\n\nIMPORTANT: Only return plain text in your response. Do not use any HTML, Markdown, or other markup including asterisks used as markup.`;
-
-  // Call OpenAI API
-  let summary = "";
-  try {
-    const openai = new OpenAI({ apiKey: process.env.GPT });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful assistant that summarizes space biology papers. Your output should not include ANY markdown. The response should include only text. ",
-        },
-        { role: "user", content: gptPrompt },
-      ],
-      temperature: 0.2,
-    });
-    summary = completion.choices[0].message.content;
-  } catch (err) {
-    summary = "Error generating summary: " + err.message;
-  }
-
-  // Return the summary and metadata
-  console.log("Summary", summary);
+  // Return scraped data and prompt for client-side AI processing
+  // The client will use Chrome's Summarizer API or Prompt API to generate the summary
+  console.log("[data] Returning scraped content for client-side AI processing");
   return new Response(
     JSON.stringify({
-      summary,
+      title: scrapedData.title,
+      content: scrapedData.content,
       csvTitle: paper.Title,
       link,
       index,
       total: records.length,
       demographic,
       imageLinks: scrapedData.imageLinks,
+      promptText, // Include the prompt for client-side use
+      // Instructions for client-side AI processing
+      aiInstructions: {
+        systemPrompt: "You are a helpful assistant that summarizes space biology papers. Your output should not include ANY markdown. The response should include only text.",
+        userPrompt: `${promptText}\n\n---\n\nTitle: ${scrapedData.title}\n\nContent:\n${scrapedData.content}\n\nIMPORTANT: Only return plain text in your response. Do not use any HTML, Markdown, or other markup including asterisks used as markup.`,
+        demographic,
+      }
     }),
     {
       status: 200,

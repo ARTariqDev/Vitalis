@@ -7,77 +7,37 @@ export default function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [prompt, setPrompt] = useState("");
   const [userLoaded, setUserLoaded] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Load user info and data
-
+  // Load all data on mount
   const loadData = async () => {
+    console.log('🔄 [Dashboard] loadData CALLED');
+    setIsLoading(true);
+    
     try {
-      if (prompt) {
-        setIsLoading(true);
-        const res = await fetch(
-          `/api/searchArticles?prompt=${encodeURIComponent(prompt)}`
-        );
-        if (!res.ok) {
-          console.error(
-            "Error fetching /api/searchArticles:",
-            res.status,
-            await res.text()
-          );
-          setData([]);
-          return;
-        }
-        const result = await res.json();
-        console.log("result", result.result);
-        let filteredTitles = [];
-        try {
-          filteredTitles = JSON.parse(result.result);
-        } catch (e) {
-          console.error("Error parsing result.result:", e, result.result);
-          filteredTitles = [];
-        }
-        const response = await fetch("/data.json");
-        if (!response.ok) {
-          console.error(
-            "Error fetching /data.json:",
-            response.status,
-            await response.text()
-          );
-          setData([]);
-          return;
-        }
-        const allData = await response.json();
-        console.log("response from /data.json \n", allData);
-        // Filter allData to only include articles whose Title matches filteredTitles
-        setData(
-          allData.filter((item) =>
-            filteredTitles.some((filtered) => filtered.Title === item.Title)
-          )
-        );
-      } else {
-        const response = await fetch("/data.json");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const jsonData = await response.json();
-        console.log("response from /data.json \n", jsonData);
-        setData(jsonData);
+      console.log("📡 [Dashboard] Loading all data from /data.json");
+      const response = await fetch("/data.json");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const jsonData = await response.json();
+      console.log("✅ [Dashboard] Loaded all data, count:", jsonData.length);
+      setData(jsonData);
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("❌ [Dashboard] Error loading data:", error);
       setData([]);
     } finally {
+      console.log("🏁 [Dashboard] loadData COMPLETE");
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
-  }, [userLoaded]);
+  }, []);
 
   // Filter data based on search term and selected tags
   const filteredData = useMemo(() => {
@@ -176,11 +136,6 @@ export default function Dashboard() {
     router.push("/login");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await loadData();
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -225,25 +180,31 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters Section */}
         <div className="mb-8">
-          {/* Search Bar + Prompt Input (no demographic input) */}
-          <form className="mb-6" onSubmit={handleSubmit}>
-            <div className="relative max-w-2xl mx-auto flex flex-col gap-4">
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative max-w-2xl mx-auto">
               <input
                 type="text"
-                placeholder="Prompt (e.g. 'space')"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
+                placeholder="Search articles by title, code, or tags..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-700 placeholder-slate-400"
               />
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-cyan-600 transition-all duration-300"
-                disabled={isLoading || !prompt}
+              <svg
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {isLoading ? "Searching..." : "Search with Prompt"}
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
             </div>
-          </form>
+          </div>
 
           {/* Mobile Filter Toggle */}
           <div className="lg:hidden mb-4">

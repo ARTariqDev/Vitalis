@@ -1,9 +1,12 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
 
-const openai = new OpenAI({ apiKey: process.env.GPT });
+/**
+ * Note: Chrome's built-in AI APIs are client-side only.
+ * This API route now returns the data and instructions for the client
+ * to process using Chrome's Prompt API (Gemini Nano).
+ */
 
 export async function GET(request) {
   try {
@@ -78,71 +81,49 @@ export async function GET(request) {
       );
     }
 
-    let completion;
-    try {
-      console.log("[searchArticles] Calling OpenAI API...");
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are a helpful assistant that filters article titles.`,
-          },
-          {
-            role: "user",
-            content: `
-            ### TASK
-            From the list of articles in the json data, select only those that are most relevant to the given demographic and the given prompt.
+    // Return data to client for processing with Chrome's Prompt API
+    console.log("[searchArticles] Returning data for client-side processing");
+    return NextResponse.json({
+      demographic,
+      prompt,
+      data,
+      instructions: {
+        systemPrompt: "You are a helpful assistant that filters article titles.",
+        taskPrompt: `
+### TASK
+From the list of articles in the json data, select only those that are most relevant to the given demographic and the given prompt.
 
-            ### INPUTS
-            Demographic: ${demographic}
-            Prompt: ${prompt}
-            Data: ${JSON.stringify(data)}
+### INPUTS
+Demographic: ${demographic}
+Prompt: ${prompt}
+Data: ${JSON.stringify(data)}
 
-            ### INSTRUCTIONS
-            1. Read the data provided (it contains an array of objects where each object represents an article. The object contains title, category tag and a unique number).
-            2. Choose only the article object whose title would most likely appeal to the demographic and the prompt which is provided by the user.
-            3. You must return atleast 2 items no matter what.
-            4. Respond **only** with a valid JSON array of objects of the articles — no commentary, no explanations, and no markdown formatting.
-            5. Use the following link and incroporate any useful information from here into your summaries: https://science.nasa.gov/biological-physical/data/: 
-            The prompt can be of the user asking for any type of article. focus on the prompt and then return the articles based on demographic
-            ### OUTPUT FORMAT
-            [
-            {
-              "Title": "Title 1",
-              "Code": "Code 1"
-              "Tags": "tags"
-            }
-            {
-              "Title": "Title 2",
-              "Code": "Code 2"
-              "Tags": "tags"
-            }
-            ]
+### INSTRUCTIONS
+1. Read the data provided (it contains an array of objects where each object represents an article. The object contains title, category tag and a unique number).
+2. Choose only the article object whose title would most likely appeal to the demographic and the prompt which is provided by the user.
+3. You must return atleast 2 items no matter what.
+4. Respond **only** with a valid JSON array of objects of the articles — no commentary, no explanations, and no markdown formatting.
+5. Use the following link and incroporate any useful information from here into your summaries: https://science.nasa.gov/biological-physical/data/
+The prompt can be of the user asking for any type of article. focus on the prompt and then return the articles based on demographic
 
-            Note: DO NOT CHANGE THE VALUES OF ANY OBJECT
-          `,
-          },
-        ],
-        temperature: 0.1,
-      });
-      console.log("[searchArticles] OpenAI response received");
-    } catch (err) {
-      console.log("[searchArticles] Error calling OpenAI API:", err);
-      return NextResponse.json({ error: "OpenAI API error." }, { status: 500 });
-    }
+### OUTPUT FORMAT
+[
+{
+  "Title": "Title 1",
+  "Code": "Code 1",
+  "Tags": "tags"
+},
+{
+  "Title": "Title 2",
+  "Code": "Code 2",
+  "Tags": "tags"
+}
+]
 
-    try {
-      const result = completion.choices[0].message.content;
-      console.log("[searchArticles] Returning result:", result);
-      return NextResponse.json({ result });
-    } catch (err) {
-      console.log("[searchArticles] Error extracting OpenAI result:", err);
-      return NextResponse.json(
-        { error: "Error extracting OpenAI result." },
-        { status: 500 }
-      );
-    }
+Note: DO NOT CHANGE THE VALUES OF ANY OBJECT
+        `
+      }
+    });
   } catch (e) {
     console.log("Error in api/searchArticles \n");
     console.log(e);
