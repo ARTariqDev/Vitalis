@@ -1,4 +1,4 @@
-# Vitalis, An All-In-One Space Biology Knowledge Engine
+# Vitalis, An All-In-One Space Biology Knowledge Engine built with chromes built in Gemini nano api suite
 
 Built for the **Google Chrome Built-in AI Challenge 2025**
 
