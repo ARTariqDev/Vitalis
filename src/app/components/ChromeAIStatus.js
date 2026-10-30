@@ -35,7 +35,7 @@ export default function ChromeAIStatus() {
           <div className="flex-1">
             <h3 className="font-semibold mb-1">Chrome AI Active</h3>
             <p className="text-sm text-teal-50">
-              Powered by Gemini Nano • Privacy-first AI processing
+              Powered by Gemini via OpenRouter
             </p>
           </div>
           <button 
@@ -60,23 +60,21 @@ export default function ChromeAIStatus() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div className="flex-1">
-            <h3 className="font-semibold mb-1">Chrome AI Not Available</h3>
+            <h3 className="font-semibold mb-1">AI Service Not Available</h3>
             <p className="text-sm text-amber-50 mb-2">
-              Chrome built-in AI (Gemini Nano) is not detected. To enable:
+              The Gemini AI service is not available right now. Please try again later.
             </p>
             <ol className="text-xs text-amber-50 mb-2 space-y-1 list-decimal list-inside">
-              <li>Use Chrome Canary 127+</li>
-              <li>Enable flags (see console for details)</li>
-              <li>Download Gemini Nano model</li>
-              <li>Restart browser</li>
+              <li>Check your network connection</li>
+              <li>Verify the server has an OpenRouter API key</li>
             </ol>
             <a 
-              href="https://developer.chrome.com/docs/ai/built-in" 
+              href="https://openrouter.ai/status" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm underline hover:text-amber-100 transition-colors"
             >
-              Full setup guide →
+              OpenRouter status
             </a>
             <button
               onClick={() => window.location.reload()}

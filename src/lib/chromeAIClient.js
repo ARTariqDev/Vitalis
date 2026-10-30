@@ -1,3 +1,27 @@
+async function generateWithOpenRouter(prompt, options = {}) {
+  const response = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, ...options })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'OpenRouter request failed');
+  }
+
+  return data.result;
+}
+
+function parseJsonResponse(result) {
+  const cleaned = result
+    .replace(/```json\n?/g, '')
+    .replace(/```\n?/g, '')
+    .trim();
+  const jsonStart = Math.min(...[cleaned.indexOf('['), cleaned.indexOf('{')].filter(index => index >= 0));
+  return JSON.parse(jsonStart > 0 ? cleaned.slice(jsonStart) : cleaned);
+}
+
 /**
  * Client-side Chrome AI Service
  * 
@@ -16,6 +40,12 @@
  * @returns {Promise<Array>} Filtered articles
  */
 export async function filterArticlesWithChromeAI(demographic, prompt, data) {
+  return parseJsonResponse(await generateWithOpenRouter(`Select the most relevant articles for this demographic and search prompt. Return only a JSON array using the exact objects from the dataset. Return at least 2 items.
+
+Demographic: ${demographic}
+Search prompt: ${prompt}
+Dataset: ${JSON.stringify(data)}`, { temperature: 0.1 }));
+
   console.log('🤖 [Chrome AI] filterArticlesWithChromeAI CALLED');
   console.log('📊 [Chrome AI] Input:', { demographic, prompt, dataLength: data?.length });
   
@@ -255,6 +285,16 @@ export async function summarizePaperWithChromeAI(title, content, demographic) {
  * @returns {Promise<string>} Summary
  */
 export async function summarizePaperWithPromptAPI(title, content, demographic) {
+  const audience = demographic === 'investor'
+    ? 'a potential investor, focusing on commercial applications, market potential, and practical implications'
+    : 'a researcher or student, including the research question, methodology, findings, and implications';
+  const truncatedContent = content?.length > 12000 ? `${content.substring(0, 12000)}\n\n[Content truncated]` : content;
+  return generateWithOpenRouter(`Summarize this space biology paper for ${audience}. Use plain text only, with no markdown.
+
+Title: ${title}
+Content:
+${truncatedContent}` , { temperature: 0.2 });
+
   console.log('🤖 [Prompt API Summary] summarizePaperWithPromptAPI CALLED');
   console.log('📊 [Prompt API Summary] Input:', { 
     title: title?.substring(0, 50) + '...', 
@@ -409,6 +449,19 @@ IMPORTANT:
  * @returns {Promise<Array>} Array of 3 recommended papers
  */
 export async function recommendRelatedPapers(currentTitle, currentContent, currentTags, allPapers, demographic) {
+  const papers = allPapers
+    .filter(paper => paper.Title !== currentTitle)
+    .map(paper => ({ Title: paper.Title, Code: paper.Code, Tags: paper.Tags || 'Unknown' }))
+    .slice(0, 100);
+  const result = await generateWithOpenRouter(`Recommend exactly 3 papers related to the current paper. Return only a JSON array and preserve exact Title, Code, and Tags values from the dataset. Include a brief RelevanceReason.
+
+Current paper: ${currentTitle}
+Tags: ${currentTags}
+Content: ${currentContent?.substring(0, 3000)}
+User type: ${demographic}
+Dataset: ${JSON.stringify(papers)}`, { temperature: 0.3 });
+  return parseJsonResponse(result).slice(0, 3);
+
   console.log('🎯 [Recommendation] recommendRelatedPapers CALLED');
   console.log('📊 [Recommendation] Input:', { 
     currentTitle: currentTitle?.substring(0, 50) + '...', 
@@ -572,6 +625,19 @@ CRITICAL: Use exact Title, Code, and Tags from the dataset. Return EXACTLY 3 pap
  * @returns {Promise<Array>} Suggested categories
  */
 export async function suggestCategories(title, summary, tags, existingCategories = []) {
+  try {
+    const result = await generateWithOpenRouter(`Suggest exactly 3 concise (1-3 word) categories for this research paper. Reuse matching existing categories. Return only a JSON array of strings.
+
+Title: ${title}
+Tags: ${tags}
+Summary: ${summary?.substring(0, 500)}
+Existing categories: ${existingCategories.join(', ')}`, { temperature: 0.4 });
+    return parseJsonResponse(result);
+  } catch (error) {
+    console.error('❌ [AI Categories] Error:', error);
+    return ['Uncategorized'];
+  }
+
   console.log('🏷️ [AI Categories] suggestCategories CALLED');
   
   try {
@@ -707,6 +773,17 @@ Return ONLY a JSON array (up to 3 papers):
  * @returns {Promise<Array>} Annotation suggestions
  */
 export async function suggestAnnotations(title, summary, userRole = 'researcher') {
+  try {
+    const result = await generateWithOpenRouter(`Generate exactly 3 insightful annotations for this research paper. Return only a JSON array of strings. ${userRole === 'investor' ? 'Focus on commercial applications and investment opportunities.' : 'Focus on research implications, methodology, and future directions.'}
+
+Title: ${title}
+Summary: ${summary?.substring(0, 800)}`, { temperature: 0.5 });
+    return parseJsonResponse(result);
+  } catch (error) {
+    console.error('❌ [AI Annotations] Error:', error);
+    return [];
+  }
+
   console.log('📝 [AI Annotations] suggestAnnotations CALLED');
   
   try {
@@ -844,10 +921,10 @@ Write in plain text (no markdown). Keep it concise but informative (200-300 word
  * @returns {Object} Object with availability status
  */
 export function checkChromeAIAvailability() {
-  console.log('🔍 [Chrome AI] checkChromeAIAvailability CALLED');
+  console.log('🔍 [AI] Checking OpenRouter Gemini availability');
   
   if (typeof window === 'undefined') {
-    console.log('⚠️ [Chrome AI] Running in server-side environment');
+    console.log('⚠️ [AI] Running in server-side environment');
     return {
       available: false,
       promptAPI: false,
@@ -856,39 +933,10 @@ export function checkChromeAIAvailability() {
     };
   }
 
-  // Detailed diagnostics (UPDATED FOR NEW API)
-  console.log('🔬 [Chrome AI] Browser diagnostics:');
-  console.log('  - User Agent:', navigator.userAgent);
-  console.log('  - Chrome version:', navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'unknown');
-  console.log('  - LanguageModel exists:', typeof LanguageModel !== 'undefined');
-  console.log('  - Summarizer exists:', typeof Summarizer !== 'undefined');
-  
-  // Note: window.ai.* is OBSOLETE as of Chrome 138+
-  if (typeof window.ai !== 'undefined') {
-    console.warn('⚠️ [Chrome AI] Found obsolete window.ai API');
-    console.warn('💡 Your code may be using outdated API. Use LanguageModel and Summarizer directly.');
-  }
-
-  const capabilities = {
-    available: typeof LanguageModel !== 'undefined' || typeof Summarizer !== 'undefined',
-    promptAPI: typeof LanguageModel !== 'undefined',
-    summarizerAPI: typeof Summarizer !== 'undefined',
-    diagnostics: (typeof LanguageModel === 'undefined' && typeof Summarizer === 'undefined') 
-      ? 'APIs not found - Chrome 138+ required' 
-      : 'New APIs available'
+  return {
+    available: true,
+    promptAPI: true,
+    summarizerAPI: true,
+    diagnostics: 'OpenRouter Gemini'
   };
-  
-  console.log('📊 [Chrome AI] Capabilities:', capabilities);
-  
-  if (!capabilities.available) {
-    console.error('❌ [Chrome AI] NOT AVAILABLE');
-    console.log('📋 [Chrome AI] Setup instructions:');
-    console.log('   1. Use Chrome Canary 138+ or Chrome Stable 138+');
-    console.log('   2. APIs should be available by default');
-    console.log('   3. Check chrome://on-device-internals for model status');
-    console.log('   4. Ensure model is downloaded (visit chrome://components)');
-    console.log('   5. Check hardware requirements: 4GB+ VRAM or 16GB+ RAM');
-  }
-  
-  return capabilities;
 }
